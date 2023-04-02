@@ -1,0 +1,9 @@
+ccxt==2.0.71
+curvesim==0.3.0
+numpy==1.23.4
+pandas==1.5.1
+plotly==5.10.0
+requests==2.28.1
+scipy==1.10.1
+shroomdk==1.0.2
+streamlit==1.13.0
