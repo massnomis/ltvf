@@ -2,6 +2,7 @@
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.subplots as subplots
 import streamlit as st
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -23,6 +24,14 @@ import math
 
 st.set_page_config(layout="wide")
 
+
+st.write("""
+
+""")
+
+
+
+
 sdk = ShroomDK('d939cf57-7bd9-408c-9a7f-58c4cc900b03')
 fig = go.Figure()
 df_combined = pd.DataFrame()
@@ -42,7 +51,6 @@ for file in os.listdir('joint_liq'):
 
     # name is the string before _ in the file name
     name = file.split('_')[0]
-    st.title(name)
 
 
 
@@ -94,52 +102,74 @@ for file in os.listdir('joint_liq'):
       'formula_a': 'Formula A',
        'formula_c_60_fixed': 'Formula C (60 Days)',
         'formula_a_60_fixed': 'Formula A (60 Days)'})
-    st.write(df.columns)
-    st.write(df)
-
-    for col in df.columns:
-        if col == 'block_timestamp':
-            continue
-        if col == 'TX_HASH':    
-            continue
-        if col == 'TOKEN_ADDRESS':
-            continue
-        if col == 'index':
-            continue
-        if col == 'block':
-            continue
-        try:
-            st.plotly_chart(px.line(df, x='block_timestamp', y=col, title=col), use_container_width=True)
-        except:
-            # exception  as e
-            pass
-            # e = sys.exc_info()[0]
-
-            # print(e)
+    # st.write(df.columns)
 
 
+    with st.expander(    name
+):
+        st.write(df)
 
+        for col in df.columns:
+            if col == 'block_timestamp':
+                continue
+            if col == 'TX_HASH':    
+                continue
+            if col == 'TOKEN_ADDRESS':
+                continue
+            if col == 'index':
+                continue
+            if col == 'block':
+                continue
+            try:
+                st.plotly_chart(px.line(df, x='block_timestamp', y=col, title=col), use_container_width=True)
+            except:
+                pass
+
+        fig = go.Figure()
+        fig = subplots.make_subplots(specs=[[{"secondary_y": True}]])
+        fig.add_trace(go.Scatter(x=df['block_timestamp'], y=df['NEW_COLLATERAL'], name='NEW_COLLATERAL'), secondary_y=False)
+        fig.add_trace(go.Scatter(x=df['block_timestamp'], y=df['Formula A'], name='Formula A'), secondary_y=True)
+        fig.add_trace(go.Scatter(x=df['block_timestamp'], y=df['Formula A (60 Days)'], name='Formula A (60 Days)'), secondary_y=True)
+        fig.update_layout(title='Formula A', xaxis_title='Date', yaxis_title='Value')
+        st.plotly_chart(fig, use_container_width=True)
+
+        fig = go.Figure()
+        fig = subplots.make_subplots(specs=[[{"secondary_y": True}]])
+        fig.add_trace(go.Scatter(x=df['block_timestamp'], y=df['NEW_COLLATERAL'], name='NEW_COLLATERAL'), secondary_y=False)
+        fig.add_trace(go.Scatter(x=df['block_timestamp'], y=df['Formula C'], name='Formula C'),     secondary_y=True)
+        fig.add_trace(go.Scatter(x=df['block_timestamp'], y=df['Formula C (60 Days)'], name='Formula C (60 Days)'), secondary_y=True)
+        fig.update_layout(title='Formula C', xaxis_title='Date', yaxis_title='Value')
+        st.plotly_chart(fig, use_container_width=True)
 
 
 
     df_last = df.iloc[-2:-1]
-    df_last['asset'] = file
+    df_last['asset'] = name
     df_last = df_last.reset_index()
-
     df_combined = df_combined.append(df_last)
-    df['assert'] = file
-
-
+    df['assert'] = name
     combined_assets_df = combined_assets_df.append(df)
 
 df_combined = df_combined.drop(columns=['TX_HASH', 'index', 'TOKEN_ADDRESS'])
 df_combined = df_combined.reset_index()
+try:
+    df_combined = df_combined.drop(columns=['index']) 
+except:
+    pass
+try:
+    df_combined = df_combined.drop(columns=['TX_HASH']) 
+except:
+    pass
+
+
+st.title('Combined Assets')
 st.write(df_combined)
 
 
 
 
 df_corr = df_combined.corr()
+st.title('Correlation')
 st.write(df_corr)
 fig = go.Figure(data=go.Heatmap(
                      z=df_corr.values,
@@ -147,6 +177,7 @@ fig = go.Figure(data=go.Heatmap(
                         y=df_corr.columns,
                         colorscale='Viridis'))
 st.plotly_chart(fig, use_container_width=True)
+st.write("all assets")
 st.write(combined_assets_df)
 
 
