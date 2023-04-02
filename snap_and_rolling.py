@@ -47,7 +47,6 @@ for file in os.listdir('joint_liq'):
     df = df.dropna()
     df['price_volatility_60'] = df['price_volatility'].rolling(60).mean()
     df['rolling_USDT_60'] =  df['combined_USDT'].rolling(60).mean()
-
     df['rolling_USDT_Vola_60'] = df['rolling_USDT_60'].rolling(60).mean()
     df['liquidity_volatility_60'] = df['combined_USDT'].pct_change().rolling(60).std()*(252**0.5)
     df['formula_c'] = (((df['price_volatility'] ** 0.5) / (df['rolling_USDT_Vola']) ) / df['rolling_USDT']) * 10000000000
@@ -59,51 +58,14 @@ for file in os.listdir('joint_liq'):
     df_last = df.iloc[-2:-1]
     df_last['asset'] = file
     df_last = df_last.reset_index()
-    st.plotly_chart(px.scatter(df, x="block_timestamp", y="rolling_USDT", title=file), use_container_width=True)
-    st.plotly_chart(px.scatter(df, x="block_timestamp", y="NEW_COLLATERAL", title=file), use_container_width=True)
-    st.plotly_chart(px.scatter(df, x="block_timestamp", y="rolling_USDT_Vola", title=file), use_container_width=True)
-    st.plotly_chart(px.scatter(df, x="block_timestamp", y="formula_c", title=file), use_container_width=True)
-    st.plotly_chart(px.scatter(df, x="block_timestamp", y="formula_a", title=file), use_container_width=True)
 
-    st.plotly_chart(px.scatter(df, x="block_timestamp", y="formula_c_60_fixed", title=file), use_container_width=True)
-    st.plotly_chart(px.scatter(df, x="block_timestamp", y="formula_a_60_fixed", title=file), use_container_width=True)
-    st.plotly_chart(px.scatter(df, x="block_timestamp", y="rolling_USDT_60", title='rolling_USDT_60'), use_container_width=True)
-    st.plotly_chart(px.scatter(df, x="block_timestamp", y="price_volatility_60", title='price_volatility_60'), use_container_width=True)
-    st.plotly_chart(px.scatter(df, x="block_timestamp", y="rolling_USDT_Vola_60", title='rolling_USDT_Vola_60'), use_container_width=True)
-
-
-
-    fig = go.Figure()
-    fig.update_layout(yaxis2=dict(overlaying='y', side='right'))
-    fig.add_trace(go.Scatter(x=df['block_timestamp'], y=df['formula_c'], name="formula_c", yaxis='y1'))
-    fig.add_trace(go.Scatter(x=df['block_timestamp'], y=df['NEW_COLLATERAL'], name="LTV", yaxis='y2'))
     df_combined = df_combined.append(df_last)
     df['assert'] = file
     combined_assets_df = combined_assets_df.append(df)
-    st.plotly_chart(fig, use_container_width=True)
-    fig_60 = go.Figure()
-    fig_60.update_layout(yaxis2=dict(overlaying='y', side='right'))
-    fig_60.add_trace(go.Scatter(x=df['block_timestamp'], y=df['formula_c_60_fixed'], name="formula_c_60", yaxis='y1'))
-    fig_60.add_trace(go.Scatter(x=df['block_timestamp'], y=df['NEW_COLLATERAL'], name="LTV", yaxis='y2'))
-    st.plotly_chart(fig_60, use_container_width=True)
-    fig = go.Figure()
-    fig.update_layout(yaxis2=dict(overlaying='y', side='right'))
-    fig.add_trace(go.Scatter(x=df['block_timestamp'], y=df['NEW_COLLATERAL'], name="LTV", yaxis='y2'))
-    fig.add_trace(go.Scatter(x=df['block_timestamp'], y=df['formula_a'], name="formula_a", yaxis='y1'))
-    st.plotly_chart(fig, use_container_width=True)
-    fig_60 = go.Figure()
-    fig_60.update_layout(yaxis2=dict(overlaying='y', side='right'))
-    fig_60.add_trace(go.Scatter(x=df['block_timestamp'], y=df['NEW_COLLATERAL'], name="LTV", yaxis='y2'))
-    fig_60.add_trace(go.Scatter(x=df['block_timestamp'], y=df['formula_a_60_fixed'], name="formula_a_60", yaxis='y1'))    
-    st.plotly_chart(fig_60, use_container_width=True)
+
 df_combined = df_combined.drop(columns=['TX_HASH', 'index', 'TOKEN_ADDRESS'])
 df_combined = df_combined.reset_index()
 st.write(df_combined)
-st.plotly_chart(px.bar(df_combined, x="NEW_COLLATERAL", y="rolling_USDT_Vola", color="asset", title="Liquidity Volatility 30 Days", barmode='group'), use_container_width=True)
-st.plotly_chart(px.bar(df_combined, x="NEW_COLLATERAL", y="formula_a", color="asset", title="formula_a 30 Days", barmode='group'), use_container_width=True)
-st.plotly_chart(px.bar(df_combined, x="NEW_COLLATERAL", y="formula_c", color="asset", title="formula_c 30 days", barmode='group'), use_container_width=True)
-st.plotly_chart(px.bar(df_combined, x="NEW_COLLATERAL", y="rolling_USDT", color="asset", title="rolling_USDT 30 days", barmode='group'), use_container_width=True)
-st.plotly_chart(px.bar(df_combined, x="NEW_COLLATERAL", y="price_volatility", color="asset", title="price_volatility 30 days", barmode='group'), use_container_width=True)
 
 
 
