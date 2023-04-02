@@ -59,10 +59,7 @@ st.code("""
 st.code("""
 'USDT_slippage_combined' = USDT equivalent quote volume for Uniswap V2 and Uniswap V3 (added)
 """)
-st.code("""
 
-'v2_v3_ratio_USD' = (v2 liquidity (USDT) at 5%) / (v3 Liquidity (USDT) at 5%)
-    """)
 st.code("""
 
 'USDT_slippage_combined_volatility' = ['USDT_slippage_combined'].rolling(30).std() / ['USDT_slippage_combined'].rolling(30).mean() 
@@ -97,10 +94,9 @@ st.code("""
 """)
 st.markdown("""
 
-This formula is very similar to A and B, but includes a more quantitative measure on the reaction of liquidity depth towards volatility. 
 
 
-As you can see, all formulas are relatively similar, yet with acute differences that create practical reasoning for which to use to estimate the LTV based on its formulas. The subsequent report showcases which formula has a best fit correlation (to the naked eye) with the formula and LTV ratio. 
+As you can see, both formulas are relatively similar, yet with acute differences that create practical reasoning for which to use to estimate the LTV based on its formulas. The subsequent report showcases which formula has a best fit correlation (to the naked eye) with the formula and LTV ratio. 
 """)
 st.title("""
 The Results
