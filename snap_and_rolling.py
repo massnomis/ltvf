@@ -55,12 +55,27 @@ for file in os.listdir('joint_liq'):
     df['formula_a_60_fixed'] = ((df['price_volatility_60'] ** 2) / df['rolling_USDT_60']) * 100000000000
     st.write(df)
     df = df.drop(columns=['OLD_COLLATERAL'])
+
+    for col in df.columns:
+        if col == 'block_timestamp':
+            continue
+        
+        st.plotly_chart(px.line(df, x='block_timestamp', y=col, title=col), use_container_width=True)
+
+
+
+
+
+
+
     df_last = df.iloc[-2:-1]
     df_last['asset'] = file
     df_last = df_last.reset_index()
 
     df_combined = df_combined.append(df_last)
     df['assert'] = file
+
+
     combined_assets_df = combined_assets_df.append(df)
 
 df_combined = df_combined.drop(columns=['TX_HASH', 'index', 'TOKEN_ADDRESS'])
