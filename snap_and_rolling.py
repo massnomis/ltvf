@@ -41,6 +41,9 @@ for file in os.listdir('joint_liq'):
     # st.write(df.iloc[-2:-1])
     # write second to last row
     # drop na
+    name = file.split('_')[0]
+    st.write(name)
+
     df = df.dropna()
     df['price_volatility_60'] = df['price_volatility'].rolling(60).mean()
     df['rolling_USDT_60'] =  df['combined_USDT'].rolling(60).mean()
