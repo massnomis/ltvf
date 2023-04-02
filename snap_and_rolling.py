@@ -44,24 +44,78 @@ for file in os.listdir('joint_liq'):
     name = file.split('_')[0]
     st.title(name)
 
+
+
+
+
     df = df.dropna()
     df['price_volatility_60'] = df['price_volatility'].rolling(60).mean()
     df['rolling_USDT_60'] =  df['combined_USDT'].rolling(60).mean()
-    df['rolling_USDT_Vola_60'] = df['rolling_USDT_60'].rolling(60).mean()
+    # df['rolling_USDT_Vola_60'] = df['rolling_USDT_60'].rolling(60).mean()
     df['liquidity_volatility_60'] = df['combined_USDT'].pct_change().rolling(60).std()*(252**0.5)
     df['formula_c'] = (((df['price_volatility'] ** 0.5) / (df['rolling_USDT_Vola']) ) / df['rolling_USDT']) * 10000000000
     df['formula_a'] = ((df['price_volatility'] ** 2) / df['rolling_USDT']) * 100000000000
-    df['formula_c_60_fixed'] = (((df['price_volatility_60'] ** 0.5) / (df['rolling_USDT_Vola_60']) ) / df['rolling_USDT_60']) * 10000000000
+    df['formula_c_60_fixed'] = (((df['price_volatility_60'] ** 0.5) / (df['liquidity_volatility_60']) ) / df['rolling_USDT_60']) * 10000000000
     df['formula_a_60_fixed'] = ((df['price_volatility_60'] ** 2) / df['rolling_USDT_60']) * 100000000000
-    st.write(df)
+    
+    
+    
+    
+
+
+    
     df = df.drop(columns=['OLD_COLLATERAL'])
+
+    # rename columns
+    # b_price is Asset Price
+    # price_volatility is Asset Volatility (30 Days)
+    # combined_USDT is Asset Liquidity
+    # rolling_USDT is Asset Liquidity (30 Days)
+    # rolling_USDT_Vola is Asset Liquidity Volatility (30 Days)
+    # price_volatility_60 is Asset Volatility (60 Days)
+    # rolling_USDT_60 is Asset Liquidity (60 Days)
+    #  rolling_USDT_Vola_60 is Asset Liquidity Volatility (60 Days)
+    # liquidity_volatility_60 is Asset Liquidity Volatility (60 Days)
+    # formula_c is  Formula C
+    # formula_a is Formula A
+    # formula_c_60_fixed is Formula C (60 Days)
+    # formula_a_60_fixed is Formula A (60 Days)
+
+    df = df.rename(columns={'b_price': 'Asset Price', 
+    'price_volatility': 'Asset Volatility (30 Days)',
+     'combined_USDT': 'Asset Liquidity', 
+     'rolling_USDT': 'Asset Liquidity (30 Days)', 
+     'rolling_USDT_Vola': 'Asset Liquidity Volatility (30 Days)',
+      'price_volatility_60': 'Asset Volatility (60 Days)', 
+     'rolling_USDT_60': 'Asset Liquidity (60 Days)', 
+    #  'rolling_USDT_Vola_60': 'Asset Liquidity Volatility (60 Days)', 
+     'liquidity_volatility_60': 'Asset Liquidity Volatility (60 Days)', 
+     'formula_c': 'Formula C',
+      'formula_a': 'Formula A',
+       'formula_c_60_fixed': 'Formula C (60 Days)',
+        'formula_a_60_fixed': 'Formula A (60 Days)'})
+    st.write(df.columns)
+    st.write(df)
 
     for col in df.columns:
         if col == 'block_timestamp':
             continue
-        
-        st.plotly_chart(px.line(df, x='block_timestamp', y=col, title=col), use_container_width=True)
+        if col == 'TX_HASH':    
+            continue
+        if col == 'TOKEN_ADDRESS':
+            continue
+        if col == 'index':
+            continue
+        if col == 'block':
+            continue
+        try:
+            st.plotly_chart(px.line(df, x='block_timestamp', y=col, title=col), use_container_width=True)
+        except:
+            # exception  as e
+            pass
+            # e = sys.exc_info()[0]
 
+            # print(e)
 
 
 
