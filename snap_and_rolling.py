@@ -42,7 +42,7 @@ for file in os.listdir('joint_liq'):
     # write second to last row
     # drop na
     name = file.split('_')[0]
-    st.write(name)
+    st.title(name)
 
     df = df.dropna()
     df['price_volatility_60'] = df['price_volatility'].rolling(60).mean()
@@ -70,7 +70,7 @@ for file in os.listdir('joint_liq'):
     df['formula_c_60_fixed'] = (((df['price_volatility_60'] ** 0.5) / (df['rolling_USDT_Vola_60']) ) / df['rolling_USDT_60']) * 10000000000
     df['formula_a_60_fixed'] = ((df['price_volatility_60'] ** 2) / df['rolling_USDT_60']) * 100000000000
     
-    st.write(file)
+#     st.write(file)
     st.write(df)
     # df['OLD']
     df = df.drop(columns=['OLD_COLLATERAL'])
