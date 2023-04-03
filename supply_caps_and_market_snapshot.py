@@ -151,7 +151,8 @@ for name in list_of_assets:
     mkr_filled = pd.read_csv('filled_info/MKR_filledInfo.csv')
     df_caps_MKR = df_caps_MKR.drop(columns=[ 'day','BLOCK_NUMBER_', 'BLOCK_TIMESTAMP_', 'TX_HASH', 'TOKEN_ADDRESS', 'index'])
     min_block = df_caps_MKR['block_number_'].min()
-    max_block = df_caps_MKR['block_number_'].max()
+    # st.write(mkr_filled)
+    max_block = mkr_filled['block'].max()
     try:
         df_caps_MKR = df_caps_MKR.drop(columns=['index'])
     except:
