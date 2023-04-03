@@ -168,6 +168,17 @@ for name in list_of_assets:
     merged_df_0 = pd.merge(mkr_filled, df_reserves_MKR, how='left', left_on='block_timestamp', right_on='DAY')
     merged_df_1 = pd.merge(merged_df_0, df_caps_MKR, how='left', left_on='block', right_on='block_number_')
     # st.write(merged_df_1)
-    # try
+    try:   
+        merged_df_1 = merged_df_1.drop(columns=['index'])
+    except:
+        pass
+    try:   
+        merged_df_1 = merged_df_1.drop(columns=['DAY'])
+    except:
+        pass
+    try:   
+        merged_df_1 = merged_df_1.drop(columns=['Unnamed: 0'])
+    except:
+        pass
     with st.expander(f'View {name} Data'):
         st.write(merged_df_1)
