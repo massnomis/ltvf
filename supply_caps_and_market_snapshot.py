@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 import os 
 from shroomdk import ShroomDK
-
+import plotly.subplots as subplots
+from plotly import *
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
@@ -113,7 +114,14 @@ UNDERLYING_SYMBOL,
 day
 order by day desc
 '''
-df_caps = run_query_flipside(suppy_caps)
+# @st.cache
+def get_caps():
+    df_caps = run_query_flipside(suppy_caps)
+    return df_caps
+
+
+
+df_caps = get_caps()
 # 
 df_caps['NEWBORROWCAP'] = df_caps['NEWBORROWCAP'].astype(float)
 df_caps['block_number_'] = df_caps['BLOCK_NUMBER_'].apply(lambda x: int(x / 6000) * 6000)
@@ -130,9 +138,13 @@ df_caps['day'] = df_caps['day'].dt.date
 st.write(df_caps)
 
 
+# @st.cache
+def get_reserves():
+    df_reserves = run_query_flipside(reserves)
+    return df_reserves
 
 
-df_reserves = run_query_flipside(reserves)
+df_reserves = get_reserves()
 df_reserves['DAY'] = pd.to_datetime(df_reserves['DAY'])
 # strip time from datetime
 df_reserves['DAY'] = df_reserves['DAY'].dt.date
@@ -168,8 +180,8 @@ for name in list_of_assets:
     merged_df_0 = pd.merge(mkr_filled, df_reserves_MKR, how='left', left_on='block_timestamp', right_on='DAY')
     merged_df_1 = pd.merge(merged_df_0, df_caps_MKR, how='left', left_on='block', right_on='block_number_')
     # st.write(merged_df_1)
-    merged_df_1['C_Inverse_30'] = 1- merged_df_1['Formula C'] 
-    merged_df_1['C_Inverse_60'] = 1- merged_df_1['Formula C (60 Days)'] 
+    merged_df_1['C_Inverse_30'] = 10000000- merged_df_1['Formula C'] 
+    merged_df_1['C_Inverse_60'] = 10000000- merged_df_1['Formula C (60 Days)'] 
 
     try:   
         merged_df_1 = merged_df_1.drop(columns=['index'])
@@ -183,12 +195,48 @@ for name in list_of_assets:
         merged_df_1 = merged_df_1.drop(columns=['Unnamed: 0'])
     except:
         pass
+    try:   
+        merged_df_1 = merged_df_1.drop(columns=['LTV'])
+    except:
+        pass 
+    try:   
+        merged_df_1 = merged_df_1.drop(columns=['LB'])
+    except:
+        pass
+     
+    try:   
+        merged_df_1 = merged_df_1.drop(columns=['LT'])
+    except:
+        pass 
 
-    merged_df_1['Formula B'] = (merged_df_1['utilization']    ) 
+    try:   
+        merged_df_1 = merged_df_1.drop(columns=['ASSET'])
+    except:
+        pass 
+    try:   
+        merged_df_1 = merged_df_1.drop(columns=['ADDRESS'])
+    except:
+        pass 
+    # merged_df_1['Formula B'] = (merged_df_1['utilization']    ) 
+    # try:   
+    #     merged_df_1 = merged_df_1.dropna()
+    # except:
 
+    #     pass 
+    # st.write(merged_df_1)
 
+    merged_df_1['Price Volatility Secondary Calc 30 Days'] = merged_df_1['Asset Price'].std()/merged_df_1['Asset Price'].rolling(30).mean()
+    merged_df_1['Price Volatility Secondary Calc 60 Days'] = merged_df_1['Asset Price'].std()/merged_df_1['Asset Price'].rolling(60).mean()
+    merged_df_1['Price Volatility Secondary Calc 90 Days'] = merged_df_1['Asset Price'].std()/merged_df_1['Asset Price'].rolling(90).mean()
 
-
+    merged_df_1['Asset Liquidity Volatility Secondary Calc 30 Days'] = merged_df_1['Asset Liquidity'].std()/merged_df_1['Asset Liquidity'].rolling(30).mean()
+    merged_df_1['Asset Liquidity Volatility Secondary Calc 60 Days'] = merged_df_1['Asset Liquidity'].std()/merged_df_1['Asset Liquidity'].rolling(60).mean()
+    merged_df_1['Asset Liquidity Volatility Secondary Calc 90 Days'] = merged_df_1['Asset Liquidity'].std()/merged_df_1['Asset Liquidity'].rolling(90).mean()
+    merged_df_1['Formula A Secondary Volatility Calc 30 Days'] = ((merged_df_1['Asset Liquidity Volatility Secondary Calc 30 Days'] ** 2) / merged_df_1['Asset Liquidity']) * 100000000000
+    merged_df_1['Formula A Secondary Volatility Calc 60 Days'] = ((merged_df_1['Asset Liquidity Volatility Secondary Calc 60 Days'] ** 2) / merged_df_1['Asset Liquidity']) * 100000000000
+    merged_df_1['Formula A Secondary Volatility Calc 90 Days'] = ((merged_df_1['Asset Liquidity Volatility Secondary Calc 90 Days'] ** 2) / merged_df_1['Asset Liquidity']) * 100000000000
+    # merged_df_1['formula_a'] = ((merged_df_1['30_day_volatility'] ** 2) / merged_df_1['USDT_slippage_combined']) * 100000000000
+    merged_df_1['formula_a_constant_liq'] = (1) / merged_df_1['Asset Liquidity (60 Days)'] * 100000000000
 
 
 
@@ -196,6 +244,23 @@ for name in list_of_assets:
         st.write(merged_df_1)
 
         st.write(merged_df_1.columns)
+        fig = go.Figure()
+        fig = subplots.make_subplots(specs=[[{"secondary_y": True}]])
+        fig.add_trace(go.Scatter(x=merged_df_1['block_timestamp'], y=merged_df_1['NEW_COLLATERAL'], name='NEW_COLLATERAL'), secondary_y=False)
+        fig.add_trace(go.Scatter(x=merged_df_1['block_timestamp'], y=merged_df_1['Formula C'], name='Formula C'), secondary_y=True)
+        fig.add_trace(go.Scatter(x=merged_df_1['block_timestamp'], y=merged_df_1['Formula C (60 Days)'], name='Formula C (60 Days)'), secondary_y=True)
+        fig.update_layout(title='Formula C', xaxis_title='Date', yaxis_title='Value')
+        st.plotly_chart(fig, use_container_width=True)
+        fig = go.Figure()
+        fig = subplots.make_subplots(specs=[[{"secondary_y": True}]])
+        fig.add_trace(go.Scatter(x=merged_df_1['block_timestamp'], y=merged_df_1['NEW_COLLATERAL'], name='NEW_COLLATERAL'), secondary_y=False)
+        fig.add_trace(go.Scatter(x=merged_df_1['block_timestamp'], y=merged_df_1['C_Inverse_60'], name='C_Inverse_60'), secondary_y=True)
+        fig.add_trace(go.Scatter(x=merged_df_1['block_timestamp'], y=merged_df_1['C_Inverse_30'], name='C_Inverse_30'), secondary_y=True)
+        fig.update_layout(title='Formula C Inverse', xaxis_title='Date', yaxis_title='Value')
+        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(px.line(merged_df_1, x='block_timestamp', y=['Price Volatility Secondary Calc 30 Days', 'Asset Volatility (30 Days)'], title=f'{name} Volatility'), use_container_width=True)
+        for col in merged_df_1.columns:
+            st.plotly_chart(px.line(merged_df_1, x='block_timestamp', y=col, title=f'{name} {col}'), use_container_width=True)
 
     df_corr = merged_df_1.corr()
     with st.expander(f'View {name} Corr'):  
@@ -208,7 +273,7 @@ for name in list_of_assets:
                                 colorscale='Viridis'))
         st.plotly_chart(fig, use_container_width=True)
         st.write("all assets")
-    
+
     mega_df = mega_df.append(merged_df_1)
 
 
