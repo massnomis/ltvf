@@ -143,12 +143,12 @@ df_reserves['utilization'] = (df_reserves['BORROWS_TOKEN_AMOUNT']/df_reserves['S
 st.write(df_reserves)
 st.plotly_chart(px.line(df_reserves, x='DAY', y='utilization', color='UNDERLYING_SYMBOL', title='Reserves Utilization'), use_container_width=True)
 
-
+mega_df = pd.DataFrame()
 list_of_assets = ['ZRX', 'UNI', 'YFI', 'MKR', 'AAVE', 'LINK', 'BAT', 'SUSHI']
 for name in list_of_assets:
     df_caps_MKR = df_caps[df_caps['SYMBOL'] == f'{name}'].reset_index()
-    df_reserves_MKR = df_reserves[df_reserves['UNDERLYING_SYMBOL'] == 'MKR'].reset_index()
-    mkr_filled = pd.read_csv('filled_info/MKR_filledInfo.csv')
+    df_reserves_MKR = df_reserves[df_reserves['UNDERLYING_SYMBOL'] == f'{name}'].reset_index()
+    mkr_filled = pd.read_csv(f'filled_info/{name}_filledInfo.csv')
     df_caps_MKR = df_caps_MKR.drop(columns=[ 'day','BLOCK_NUMBER_', 'BLOCK_TIMESTAMP_', 'TX_HASH', 'TOKEN_ADDRESS', 'index'])
     min_block = df_caps_MKR['block_number_'].min()
     # st.write(mkr_filled)
@@ -168,6 +168,9 @@ for name in list_of_assets:
     merged_df_0 = pd.merge(mkr_filled, df_reserves_MKR, how='left', left_on='block_timestamp', right_on='DAY')
     merged_df_1 = pd.merge(merged_df_0, df_caps_MKR, how='left', left_on='block', right_on='block_number_')
     # st.write(merged_df_1)
+    merged_df_1['C_Inverse_30'] = 1- merged_df_1['Formula C'] 
+    merged_df_1['C_Inverse_60'] = 1- merged_df_1['Formula C (60 Days)'] 
+
     try:   
         merged_df_1 = merged_df_1.drop(columns=['index'])
     except:
@@ -180,5 +183,47 @@ for name in list_of_assets:
         merged_df_1 = merged_df_1.drop(columns=['Unnamed: 0'])
     except:
         pass
+
+    merged_df_1['Formula B'] = (merged_df_1['utilization']    ) 
+
+
+
+
+
+
+
     with st.expander(f'View {name} Data'):
         st.write(merged_df_1)
+
+        st.write(merged_df_1.columns)
+
+    df_corr = merged_df_1.corr()
+    with st.expander(f'View {name} Corr'):  
+        st.title('Correlation')
+        st.write(df_corr)
+        fig = go.Figure(data=go.Heatmap(
+                            z=df_corr.values,
+                                x=df_corr.columns,
+                                y=df_corr.columns,
+                                colorscale='Viridis'))
+        st.plotly_chart(fig, use_container_width=True)
+        st.write("all assets")
+    
+    mega_df = mega_df.append(merged_df_1)
+
+
+st.write(mega_df)
+megadf_corr = mega_df.corr()
+with st.expander(f'View All Assets Corr'):
+    st.title('Correlation')
+    st.write(megadf_corr)
+    fig = go.Figure(data=go.Heatmap(
+                        z=megadf_corr.values,
+                            x=megadf_corr.columns,
+                            y=megadf_corr.columns,
+                            colorscale='Viridis'))
+    st.plotly_chart(fig, use_container_width=True)
+    st.write("all assets")
+
+
+from sklearn import *
