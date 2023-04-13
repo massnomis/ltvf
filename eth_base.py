@@ -29,134 +29,157 @@ def run_query_flipside(query):
         st.write('Query failed')
         st.write(sdk.query(query).error)
         return None
-def get_price(timestamp, name):
-    name = name.replace(' ', '')
-    if name == 'WBTC':
-        name = 'BTC'
-    if name == 'WETH':
-        name = 'ETH'
-    if name == 'USDT':
-        name = 'BUSD'
-    if name == 'FEI':
-        name = 'BUSD'
-    if name == 'DAI':
-        name = 'BUSD'
-    price = pd.DataFrame(ccxt.binance().fetch_ohlcv(symbol=f'{name}/USDT', timeframe='1d', since=ccxt.binance().iso8601(timestamp), limit=1000))
-    price = price[4]
-    return price
-# with st.expander('dir'):
-#     st.write(os.listdir('univ2v3'))
-full_volume_df = pd.DataFrame()
-for file in os.listdir('univ2v3'):
-    if 'full' in file:
-        df = pd.read_csv('univ2v3/'+file)
-        try:
-            df['blocknumber'] = df['blocknumber'].astype('int')
-            full_volume_df = pd.merge(full_volume_df, df, how = 'left', on = 'blocknumber')
-        except:
-            full_volume_df = pd.concat([full_volume_df, df], axis = 1)
-    else:
-        pass
-full_volume_df['blocknumber'] = full_volume_df['blocknumber'].apply(lambda x: int(x / 6500) * 6500)
-full_volume_df = full_volume_df.groupby(['blocknumber']).mean().reset_index()
-list_of_blocks = str(full_volume_df['blocknumber'].tolist())[1:-1]
-q = f'''
-select block_number  as  "blocknumber"  , block_timestamp as "block_timestamp" from ethereum.core.fact_blocks
-where block_number in ({list_of_blocks})
-'''
-df_q = run_query_flipside(q)
-for col in full_volume_df.columns[1:]:
-    full_volume_df.rename(columns={col: col.split('volume')[1]}, inplace=True)
-for col in full_volume_df.columns[1:]:
-    full_volume_df.rename(columns={col: col.split('for')[0]}, inplace=True)
-full_volume_df = pd.merge(full_volume_df, df_q, on='blocknumber')
-for col in full_volume_df.columns[1:-2]:
-    if col.isupper():
-        full_volume_df[col+'_price'] = ''
-placeholder_df = st.empty()
-full_volume_df['block_timestamp'] = pd.to_datetime(full_volume_df['block_timestamp'])
-full_volume_df['block_timestamp'] = full_volume_df['block_timestamp'].apply(lambda x: x.replace(hour=0, minute=0, second=0, microsecond=0))
+# def get_price(timestamp, name):
+#     name = name.replace(' ', '')
+#     if name == 'WBTC':
+#         name = 'BTC'
+#     if name == 'WETH':
+#         name = 'ETH'
+#     if name == 'USDT':
+#         name = 'BUSD'
+#     if name == 'FEI':
+#         name = 'BUSD'
+#     if name == 'DAI':
+#         name = 'BUSD'
+#     price = pd.DataFrame(ccxt.binance().fetch_ohlcv(symbol=f'{name}/USDT', timeframe='1d', since=ccxt.binance().iso8601(timestamp), limit=1000))
+#     price = price[4]
+#     return price
+# # with st.expander('dir'):
+# #     st.write(os.listdir('univ2v3'))
+# full_volume_df = pd.DataFrame()
+# for file in os.listdir('univ2v3'):
+#     if 'full' in file:
+#         df = pd.read_csv('univ2v3/'+file)
+#         try:
+#             df['blocknumber'] = df['blocknumber'].astype('int')
+#             full_volume_df = pd.merge(full_volume_df, df, how = 'left', on = 'blocknumber')
+#         except:
+#             full_volume_df = pd.concat([full_volume_df, df], axis = 1)
+#     else:
+#         pass
+# full_volume_df['blocknumber'] = full_volume_df['blocknumber'].apply(lambda x: int(x / 6500) * 6500)
+# full_volume_df = full_volume_df.groupby(['blocknumber']).mean().reset_index()
+# list_of_blocks = str(full_volume_df['blocknumber'].tolist())[1:-1]
+# q = f'''
+# select block_number  as  "blocknumber"  , block_timestamp as "block_timestamp" from ethereum.core.fact_blocks
+# where block_number in ({list_of_blocks})
+# '''
+# df_q = run_query_flipside(q)
+# for col in full_volume_df.columns[1:]:
+#     full_volume_df.rename(columns={col: col.split('volume')[1]}, inplace=True)
+# for col in full_volume_df.columns[1:]:
+#     full_volume_df.rename(columns={col: col.split('for')[0]}, inplace=True)
+# full_volume_df = pd.merge(full_volume_df, df_q, on='blocknumber')
+# for col in full_volume_df.columns[1:-2]:
+#     if col.isupper():
+#         full_volume_df[col+'_price'] = ''
+# placeholder_df = st.empty()
+# full_volume_df['block_timestamp'] = pd.to_datetime(full_volume_df['block_timestamp'])
+# full_volume_df['block_timestamp'] = full_volume_df['block_timestamp'].apply(lambda x: x.replace(hour=0, minute=0, second=0, microsecond=0))
 
 
 
-for col in full_volume_df.columns[1:-2]:
-    if col.isupper():
-        full_volume_df[col+'_price'] = get_price(full_volume_df['block_timestamp'].min(), name=col)
-        full_volume_df[col+'_price_eth'] = full_volume_df[col+'_price'] / get_price(full_volume_df['block_timestamp'].min(), name='ETH')
-        full_volume_df[col+'liquidity USDT'] = full_volume_df[col+'_price'] * full_volume_df[col]
-        full_volume_df[col+'30_day_price_volatiliy'] = (full_volume_df[col+'_price'].std())/(full_volume_df[col+'_price'].rolling(30).mean())
-        full_volume_df[col+'30_day_price_volatiliy_eth'] = (full_volume_df[col+'_price_eth'].std())/(full_volume_df[col+'_price_eth'].rolling(30).mean())
+# for col in full_volume_df.columns[1:-2]:
+#     if col.isupper():
+#         full_volume_df[col+'_price'] = get_price(full_volume_df['block_timestamp'].min(), name=col)
+#         full_volume_df[col+'_price_eth'] = full_volume_df[col+'_price'] / get_price(full_volume_df['block_timestamp'].min(), name='ETH')
+#         full_volume_df[col+'liquidity USDT'] = full_volume_df[col+'_price'] * full_volume_df[col]
+#         full_volume_df[col+'30_day_price_volatiliy'] = (full_volume_df[col+'_price'].std())/(full_volume_df[col+'_price'].rolling(30).mean())
+#         full_volume_df[col+'30_day_price_volatiliy_eth'] = (full_volume_df[col+'_price_eth'].std())/(full_volume_df[col+'_price_eth'].rolling(30).mean())
 
 
 
-LINK_max  = 1000000000
-AAVE_max  = 16000000
-UNI_max  = 1000000000
-YFI_max =  30000
-COMP_max = 10000000
-SUSHI_max = 250000000
-MKR_max =  1005577
-BAT_max = 1500000000
-ZRX_max  = 1000000000
+# LINK_max  = 1000000000
+# AAVE_max  = 16000000
+# UNI_max  = 1000000000
+# YFI_max =  30000
+# COMP_max = 10000000
+# SUSHI_max = 250000000
+# MKR_max =  1005577
+# BAT_max = 1500000000
+# ZRX_max  = 1000000000
 
+
+
+
+# full_volume_df['LINK_Liq_div_max_supply'] = (full_volume_df[' LINK ']/LINK_max).rolling(30).mean() *10000
+# full_volume_df['AAVE_Liq_div_max_supply'] = (full_volume_df[' AAVE ']/AAVE_max).rolling(30).mean()*10000
+# full_volume_df['UNI_Liq_div_max_supply'] = (full_volume_df[' UNI ']/UNI_max).rolling(30).mean()*10000
+# full_volume_df['YFI_Liq_div_max_supply'] = (full_volume_df[' YFI ']/YFI_max).rolling(30).mean()*10000
+# full_volume_df['COMP_Liq_div_max_supply'] = (full_volume_df[' COMP ']/COMP_max).rolling(30).mean()*10000
+# full_volume_df['SUSHI_Liq_div_max_supply'] = (full_volume_df[' SUSHI ']/SUSHI_max).rolling(30).mean()*10000
+# full_volume_df['MKR_Liq_div_max_supply'] = (full_volume_df[' MKR ']/MKR_max).rolling(30).mean()*10000
+# full_volume_df['BAT_Liq_div_max_supply'] = (full_volume_df[' BAT ']/BAT_max).rolling(30).mean()*10000
+# full_volume_df['ZRX_Liq_div_max_supply'] = (full_volume_df[' ZRX ']/ZRX_max).rolling(30).mean() *10000
+
+
+
+# # 
+
+
+# full_volume_df['T_LTV_A_LINK'] = math.e**((full_volume_df[' LINK 30_day_price_volatiliy'] / (full_volume_df['LINK_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_AAVE'] = math.e**((full_volume_df[' AAVE 30_day_price_volatiliy'] / (full_volume_df['AAVE_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_UNI'] = math.e**((full_volume_df[' UNI 30_day_price_volatiliy'] / (full_volume_df['UNI_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_YFI'] = math.e**((full_volume_df[' YFI 30_day_price_volatiliy'] / (full_volume_df['YFI_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_COMP'] = math.e**((full_volume_df[' COMP 30_day_price_volatiliy'] / (full_volume_df['COMP_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_SUSHI'] = math.e**((full_volume_df[' SUSHI 30_day_price_volatiliy'] / (full_volume_df['SUSHI_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_MKR'] = math.e**((full_volume_df[' MKR 30_day_price_volatiliy'] / (full_volume_df['MKR_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_BAT'] = math.e**((full_volume_df[' BAT 30_day_price_volatiliy'] / (full_volume_df['BAT_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_ZRX'] = math.e**((full_volume_df[' ZRX 30_day_price_volatiliy'] / (full_volume_df['ZRX_Liq_div_max_supply'])) *-1)
+
+# full_volume_df['T_LTV_B_LINK'] = (full_volume_df['LINK_Liq_div_max_supply'])/(full_volume_df[' LINK 30_day_price_volatiliy']  )
+# full_volume_df['T_LTV_B_AAVE'] = (full_volume_df['AAVE_Liq_div_max_supply'])/(full_volume_df[' AAVE 30_day_price_volatiliy']  )
+# full_volume_df['T_LTV_B_UNI'] = (full_volume_df['UNI_Liq_div_max_supply'])/(full_volume_df[' UNI 30_day_price_volatiliy']  )
+# full_volume_df['T_LTV_B_YFI'] = (full_volume_df['YFI_Liq_div_max_supply'])/(full_volume_df[' YFI 30_day_price_volatiliy']  )
+# full_volume_df['T_LTV_B_COMP'] = (full_volume_df['COMP_Liq_div_max_supply'])/(full_volume_df[' COMP 30_day_price_volatiliy']  )
+# full_volume_df['T_LTV_B_SUSHI'] = (full_volume_df['SUSHI_Liq_div_max_supply'])/(full_volume_df[' SUSHI 30_day_price_volatiliy']  )
+# full_volume_df['T_LTV_B_MKR'] = (full_volume_df['MKR_Liq_div_max_supply'])/(full_volume_df[' MKR 30_day_price_volatiliy']  )
+# full_volume_df['T_LTV_B_BAT'] = (full_volume_df['BAT_Liq_div_max_supply'])/(full_volume_df[' BAT 30_day_price_volatiliy']  )
+# full_volume_df['T_LTV_B_ZRX'] = (full_volume_df['ZRX_Liq_div_max_supply'])/(full_volume_df[' ZRX 30_day_price_volatiliy']  )
+
+# full_volume_df['T_LTV_C_LINK'] = ((full_volume_df['LINK_Liq_div_max_supply']))/((full_volume_df[' LINK 30_day_price_volatiliy']  )*10)
+# full_volume_df['T_LTV_C_AAVE'] = ((full_volume_df['AAVE_Liq_div_max_supply']))/((full_volume_df[' AAVE 30_day_price_volatiliy']  )*10)
+# full_volume_df['T_LTV_C_UNI'] = ((full_volume_df['UNI_Liq_div_max_supply']))/((full_volume_df[' UNI 30_day_price_volatiliy']  )*10)
+# full_volume_df['T_LTV_C_YFI'] = ((full_volume_df['YFI_Liq_div_max_supply']))/((full_volume_df[' YFI 30_day_price_volatiliy']  )*10)
+# full_volume_df['T_LTV_C_COMP'] = ((full_volume_df['COMP_Liq_div_max_supply']))/((full_volume_df[' COMP 30_day_price_volatiliy']  )*10)
+# full_volume_df['T_LTV_C_SUSHI'] = ((full_volume_df['SUSHI_Liq_div_max_supply']))/((full_volume_df[' SUSHI 30_day_price_volatiliy']  )*10)
+# full_volume_df['T_LTV_C_MKR'] = ((full_volume_df['MKR_Liq_div_max_supply']))/((full_volume_df[' MKR 30_day_price_volatiliy']  )*10)
+# full_volume_df['T_LTV_C_BAT'] = ((full_volume_df['BAT_Liq_div_max_supply']))/((full_volume_df[' BAT 30_day_price_volatiliy']  )*10)
+# full_volume_df['T_LTV_C_ZRX'] = ((full_volume_df['ZRX_Liq_div_max_supply']))/((full_volume_df[' ZRX 30_day_price_volatiliy']  )*10)
+
+# full_volume_df['T_LTV_A_ETH_LINK'] = math.e**((full_volume_df[' LINK 30_day_price_volatiliy_eth'] / (full_volume_df['LINK_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_ETH_AAVE'] = math.e**((full_volume_df[' AAVE 30_day_price_volatiliy_eth'] / (full_volume_df['AAVE_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_ETH_UNI'] = math.e**((full_volume_df[' UNI 30_day_price_volatiliy_eth'] / (full_volume_df['UNI_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_ETH_YFI'] = math.e**((full_volume_df[' YFI 30_day_price_volatiliy_eth'] / (full_volume_df['YFI_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_ETH_COMP'] = math.e**((full_volume_df[' COMP 30_day_price_volatiliy_eth'] / (full_volume_df['COMP_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_ETH_SUSHI'] = math.e**((full_volume_df[' SUSHI 30_day_price_volatiliy_eth'] / (full_volume_df['SUSHI_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_ETH_MKR'] = math.e**((full_volume_df[' MKR 30_day_price_volatiliy_eth'] / (full_volume_df['MKR_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_ETH_BAT'] = math.e**((full_volume_df[' BAT 30_day_price_volatiliy_eth'] / (full_volume_df['BAT_Liq_div_max_supply']))*-1)
+# full_volume_df['T_LTV_A_ETH_ZRX'] = math.e**((full_volume_df[' ZRX 30_day_price_volatiliy_eth'] / (full_volume_df['ZRX_Liq_div_max_supply']))*-1)
+
+# full_volume_df.to_csv('full_volume_df.csv')
+full_volume_df = pd.read_csv('full_volume_df.csv')
+try:
+    full_volume_df = full_volume_df.drop(columns=['Unnamed: 0'])
+except:
+    pass
 
 
 st.write("We take max supply for each token from the official website and divide the liquidity by it. This gives us an idea of how much of the total supply is liquid.")
 
-full_volume_df['LINK_Liq_div_max_supply'] = (full_volume_df[' LINK ']/LINK_max).rolling(30).mean() *10000
-full_volume_df['AAVE_Liq_div_max_supply'] = (full_volume_df[' AAVE ']/AAVE_max).rolling(30).mean()*10000
-full_volume_df['UNI_Liq_div_max_supply'] = (full_volume_df[' UNI ']/UNI_max).rolling(30).mean()*10000
-full_volume_df['YFI_Liq_div_max_supply'] = (full_volume_df[' YFI ']/YFI_max).rolling(30).mean()*10000
-full_volume_df['COMP_Liq_div_max_supply'] = (full_volume_df[' COMP ']/COMP_max).rolling(30).mean()*10000
-full_volume_df['SUSHI_Liq_div_max_supply'] = (full_volume_df[' SUSHI ']/SUSHI_max).rolling(30).mean()*10000
-full_volume_df['MKR_Liq_div_max_supply'] = (full_volume_df[' MKR ']/MKR_max).rolling(30).mean()*10000
-full_volume_df['BAT_Liq_div_max_supply'] = (full_volume_df[' BAT ']/BAT_max).rolling(30).mean()*10000
-full_volume_df['ZRX_Liq_div_max_supply'] = (full_volume_df[' ZRX ']/ZRX_max).rolling(30).mean() *10000
-
-
-
-# 
-
 st.write("We take the volatility of the price and divide it by the liquidity divided by the max supply. This gives us an idea of how much of the total supply is liquid and how volatile the price is. We then take the exponential of this value to get a value between 0 and 1. The higher the value, Higher the proposed LTV.")
 
-full_volume_df['T_LTV_A_LINK'] = math.e**((full_volume_df[' LINK 30_day_price_volatiliy'] / (full_volume_df['LINK_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_AAVE'] = math.e**((full_volume_df[' AAVE 30_day_price_volatiliy'] / (full_volume_df['AAVE_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_UNI'] = math.e**((full_volume_df[' UNI 30_day_price_volatiliy'] / (full_volume_df['UNI_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_YFI'] = math.e**((full_volume_df[' YFI 30_day_price_volatiliy'] / (full_volume_df['YFI_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_COMP'] = math.e**((full_volume_df[' COMP 30_day_price_volatiliy'] / (full_volume_df['COMP_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_SUSHI'] = math.e**((full_volume_df[' SUSHI 30_day_price_volatiliy'] / (full_volume_df['SUSHI_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_MKR'] = math.e**((full_volume_df[' MKR 30_day_price_volatiliy'] / (full_volume_df['MKR_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_BAT'] = math.e**((full_volume_df[' BAT 30_day_price_volatiliy'] / (full_volume_df['BAT_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_ZRX'] = math.e**((full_volume_df[' ZRX 30_day_price_volatiliy'] / (full_volume_df['ZRX_Liq_div_max_supply'])) *-1)
 st.plotly_chart(px.scatter(full_volume_df, x = 'block_timestamp', y = [col for col in full_volume_df.columns if '30_day_price_volatiliy' in col], log_y=True), use_container_width=True)
 
 st.plotly_chart(px.scatter(full_volume_df, x = 'block_timestamp', y = [col for col in full_volume_df.columns if 'liquidity USDT' in col]), use_container_width=True)
 st.plotly_chart(px.scatter(full_volume_df, x = 'block_timestamp', y = [col for col in full_volume_df.columns if 'Liq_div_max_supply' in col]), use_container_width=True)
 
-full_volume_df['T_LTV_B_LINK'] = (full_volume_df['LINK_Liq_div_max_supply'])/(full_volume_df[' LINK 30_day_price_volatiliy']  )
-full_volume_df['T_LTV_B_AAVE'] = (full_volume_df['AAVE_Liq_div_max_supply'])/(full_volume_df[' AAVE 30_day_price_volatiliy']  )
-full_volume_df['T_LTV_B_UNI'] = (full_volume_df['UNI_Liq_div_max_supply'])/(full_volume_df[' UNI 30_day_price_volatiliy']  )
-full_volume_df['T_LTV_B_YFI'] = (full_volume_df['YFI_Liq_div_max_supply'])/(full_volume_df[' YFI 30_day_price_volatiliy']  )
-full_volume_df['T_LTV_B_COMP'] = (full_volume_df['COMP_Liq_div_max_supply'])/(full_volume_df[' COMP 30_day_price_volatiliy']  )
-full_volume_df['T_LTV_B_SUSHI'] = (full_volume_df['SUSHI_Liq_div_max_supply'])/(full_volume_df[' SUSHI 30_day_price_volatiliy']  )
-full_volume_df['T_LTV_B_MKR'] = (full_volume_df['MKR_Liq_div_max_supply'])/(full_volume_df[' MKR 30_day_price_volatiliy']  )
-full_volume_df['T_LTV_B_BAT'] = (full_volume_df['BAT_Liq_div_max_supply'])/(full_volume_df[' BAT 30_day_price_volatiliy']  )
-full_volume_df['T_LTV_B_ZRX'] = (full_volume_df['ZRX_Liq_div_max_supply'])/(full_volume_df[' ZRX 30_day_price_volatiliy']  )
 st.write("This is the LTV for the 30 day price volatility, without using the log function")
 st.plotly_chart(px.scatter(full_volume_df, x = 'blocknumber', y = [col for col in full_volume_df.columns if 'T_LTV_A' in col], log_y=True), use_container_width=True)
 
 st.plotly_chart(px.scatter(full_volume_df, x = 'blocknumber', y = [col for col in full_volume_df.columns if 'T_LTV_B' in col]), use_container_width=True)
 
 st.write("This is the LTV for the 30 day price volatility, using the log function, and multiplying by 10")
-full_volume_df['T_LTV_C_LINK'] = ((full_volume_df['LINK_Liq_div_max_supply']))/((full_volume_df[' LINK 30_day_price_volatiliy']  )*10)
-full_volume_df['T_LTV_C_AAVE'] = ((full_volume_df['AAVE_Liq_div_max_supply']))/((full_volume_df[' AAVE 30_day_price_volatiliy']  )*10)
-full_volume_df['T_LTV_C_UNI'] = ((full_volume_df['UNI_Liq_div_max_supply']))/((full_volume_df[' UNI 30_day_price_volatiliy']  )*10)
-full_volume_df['T_LTV_C_YFI'] = ((full_volume_df['YFI_Liq_div_max_supply']))/((full_volume_df[' YFI 30_day_price_volatiliy']  )*10)
-full_volume_df['T_LTV_C_COMP'] = ((full_volume_df['COMP_Liq_div_max_supply']))/((full_volume_df[' COMP 30_day_price_volatiliy']  )*10)
-full_volume_df['T_LTV_C_SUSHI'] = ((full_volume_df['SUSHI_Liq_div_max_supply']))/((full_volume_df[' SUSHI 30_day_price_volatiliy']  )*10)
-full_volume_df['T_LTV_C_MKR'] = ((full_volume_df['MKR_Liq_div_max_supply']))/((full_volume_df[' MKR 30_day_price_volatiliy']  )*10)
-full_volume_df['T_LTV_C_BAT'] = ((full_volume_df['BAT_Liq_div_max_supply']))/((full_volume_df[' BAT 30_day_price_volatiliy']  )*10)
-full_volume_df['T_LTV_C_ZRX'] = ((full_volume_df['ZRX_Liq_div_max_supply']))/((full_volume_df[' ZRX 30_day_price_volatiliy']  )*10)
 st.plotly_chart(px.scatter(full_volume_df, x = 'blocknumber', y = [col for col in full_volume_df.columns if 'T_LTV_C' in col]), use_container_width=True)
 st.plotly_chart(px.scatter(full_volume_df, x = 'blocknumber', y = [col for col in full_volume_df.columns if '30_day_price_volatiliy_eth' in col]), use_container_width=True)
 
@@ -164,15 +187,6 @@ st.plotly_chart(px.scatter(full_volume_df, x = 'blocknumber', y = [col for col i
 
 
 st.write("This is the LTV for the 30 day price volatility, using the log function, and multiplying by, and using the ETH price volatility rather than being dolar based")
-full_volume_df['T_LTV_A_ETH_LINK'] = math.e**((full_volume_df[' LINK 30_day_price_volatiliy_eth'] / (full_volume_df['LINK_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_ETH_AAVE'] = math.e**((full_volume_df[' AAVE 30_day_price_volatiliy_eth'] / (full_volume_df['AAVE_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_ETH_UNI'] = math.e**((full_volume_df[' UNI 30_day_price_volatiliy_eth'] / (full_volume_df['UNI_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_ETH_YFI'] = math.e**((full_volume_df[' YFI 30_day_price_volatiliy_eth'] / (full_volume_df['YFI_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_ETH_COMP'] = math.e**((full_volume_df[' COMP 30_day_price_volatiliy_eth'] / (full_volume_df['COMP_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_ETH_SUSHI'] = math.e**((full_volume_df[' SUSHI 30_day_price_volatiliy_eth'] / (full_volume_df['SUSHI_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_ETH_MKR'] = math.e**((full_volume_df[' MKR 30_day_price_volatiliy_eth'] / (full_volume_df['MKR_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_ETH_BAT'] = math.e**((full_volume_df[' BAT 30_day_price_volatiliy_eth'] / (full_volume_df['BAT_Liq_div_max_supply']))*-1)
-full_volume_df['T_LTV_A_ETH_ZRX'] = math.e**((full_volume_df[' ZRX 30_day_price_volatiliy_eth'] / (full_volume_df['ZRX_Liq_div_max_supply']))*-1)
 st.plotly_chart(px.scatter(full_volume_df, x = 'blocknumber', y = [col for col in full_volume_df.columns if 'T_LTV_A_ETH' in col]), use_container_width=True)
 
 
