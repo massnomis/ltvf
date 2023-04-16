@@ -16,7 +16,7 @@ sdk = ShroomDK('d939cf57-7bd9-408c-9a7f-58c4cc900b03')
 
 
 st.write('''
-Our goal here is to come up with a formula that will
+Our goal here is to come up with a formula that will allow for the calculation of the LTV of a given asset. We will use the following formula:
 ''')
 
 
@@ -117,15 +117,6 @@ def run_query_flipside(query):
 # # 
 
 
-# full_volume_df['T_LTV_A_LINK'] = math.e**((full_volume_df[' LINK 30_day_price_volatiliy'] / (full_volume_df['LINK_Liq_div_max_supply']))*-1)
-# full_volume_df['T_LTV_A_AAVE'] = math.e**((full_volume_df[' AAVE 30_day_price_volatiliy'] / (full_volume_df['AAVE_Liq_div_max_supply']))*-1)
-# full_volume_df['T_LTV_A_UNI'] = math.e**((full_volume_df[' UNI 30_day_price_volatiliy'] / (full_volume_df['UNI_Liq_div_max_supply']))*-1)
-# full_volume_df['T_LTV_A_YFI'] = math.e**((full_volume_df[' YFI 30_day_price_volatiliy'] / (full_volume_df['YFI_Liq_div_max_supply']))*-1)
-# full_volume_df['T_LTV_A_COMP'] = math.e**((full_volume_df[' COMP 30_day_price_volatiliy'] / (full_volume_df['COMP_Liq_div_max_supply']))*-1)
-# full_volume_df['T_LTV_A_SUSHI'] = math.e**((full_volume_df[' SUSHI 30_day_price_volatiliy'] / (full_volume_df['SUSHI_Liq_div_max_supply']))*-1)
-# full_volume_df['T_LTV_A_MKR'] = math.e**((full_volume_df[' MKR 30_day_price_volatiliy'] / (full_volume_df['MKR_Liq_div_max_supply']))*-1)
-# full_volume_df['T_LTV_A_BAT'] = math.e**((full_volume_df[' BAT 30_day_price_volatiliy'] / (full_volume_df['BAT_Liq_div_max_supply']))*-1)
-# full_volume_df['T_LTV_A_ZRX'] = math.e**((full_volume_df[' ZRX 30_day_price_volatiliy'] / (full_volume_df['ZRX_Liq_div_max_supply'])) *-1)
 
 # full_volume_df['T_LTV_B_LINK'] = (full_volume_df['LINK_Liq_div_max_supply'])/(full_volume_df[' LINK 30_day_price_volatiliy']  )
 # full_volume_df['T_LTV_B_AAVE'] = (full_volume_df['AAVE_Liq_div_max_supply'])/(full_volume_df[' AAVE 30_day_price_volatiliy']  )
@@ -163,38 +154,81 @@ try:
     full_volume_df = full_volume_df.drop(columns=['Unnamed: 0'])
 except:
     pass
+full_volume_df['T_LTV_A_USD_LINK'] = full_volume_df['T_LTV_A_LINK']
+full_volume_df['T_LTV_A_USD_AAVE'] = full_volume_df['T_LTV_A_AAVE']
+full_volume_df['T_LTV_A_USD_UNI'] = full_volume_df['T_LTV_A_UNI']
+full_volume_df['T_LTV_A_USD_YFI'] = full_volume_df['T_LTV_A_YFI']
+full_volume_df['T_LTV_A_USD_COMP'] = full_volume_df['T_LTV_A_COMP']
+full_volume_df['T_LTV_A_USD_SUSHI'] = full_volume_df['T_LTV_A_SUSHI']
+full_volume_df['T_LTV_A_USD_MKR'] = full_volume_df['T_LTV_A_MKR']
+full_volume_df['T_LTV_A_USD_BAT'] = full_volume_df['T_LTV_A_BAT']
+full_volume_df['T_LTV_A_USD_ZRX'] = full_volume_df['T_LTV_A_ZRX']
 
 
+st.title("Asset Classification:")
+st.title("Gold")
+st.write("This includes all stable coins and assets that are not volatile. These assets are used to store value and are not used for trading.")
+st.write("Liquidity on and off chain is so deep its nearly incalcualable")
+st.write("This includes: DAI, USDC, WBTC, ETH, (USDT)")
+
+
+
+st.title("Silver")
+
+st.write("These include assets with lower volatility and liquidity. These assets are used for trading and are not used to store value.")
+st.write("Hwoever, the reconmended LTV values are not as volatilile, so they requre less scrunty and less adjustment.")
+st.write("These include 'Blue Chip' assets such as: LINK, UNI, BAT, ZRX, MKR")
+
+st.title("Bronze")
+st.write("These include assets with higher volatility and lowest liquidity")
+st.write("the reconmended LTV values are more volatilile, so they requre more scrunty and more adjustment.")
+st.write("These include: AAVE, YFI, SUSHI, COMP")
+st.write("It is most liekly that liquidity data for these assets is not accurate, so price volatility becomes a major factor in determining the LTV.")
+st.write("For these, more research is needed to determine the best way to calculate LTV. (or better liquidity data: including Balancer, Sushiswap, Curve, etc.)")
+
+
+
+
+st.title("LTV Calculation formulae:")
 st.write("We take max supply for each token from the official website and divide the liquidity by it. This gives us an idea of how much of the total supply is liquid.")
 
 st.write("We take the volatility of the price and divide it by the liquidity divided by the max supply. This gives us an idea of how much of the total supply is liquid and how volatile the price is. We then take the exponential of this value to get a value between 0 and 1. The higher the value, Higher the proposed LTV.")
 
+
+
+st.write("below is the 30 day price volatility against USD and agasint ETH for each asset, using the log function")
 st.plotly_chart(px.scatter(full_volume_df, x = 'block_timestamp', y = [col for col in full_volume_df.columns if '30_day_price_volatiliy' in col], log_y=True), use_container_width=True)
 
+st.write("below is the liquidity in USDT for each asset")
 st.plotly_chart(px.scatter(full_volume_df, x = 'block_timestamp', y = [col for col in full_volume_df.columns if 'liquidity USDT' in col]), use_container_width=True)
+st.write("below is the liquidity divided by the max supply for each asset")
 st.plotly_chart(px.scatter(full_volume_df, x = 'block_timestamp', y = [col for col in full_volume_df.columns if 'Liq_div_max_supply' in col]), use_container_width=True)
 
-st.write("This is the LTV for the 30 day price volatility, without using the log function")
-st.plotly_chart(px.scatter(full_volume_df, x = 'blocknumber', y = [col for col in full_volume_df.columns if 'T_LTV_A' in col], log_y=True), use_container_width=True)
 
+st.title("The Three Formulae for LTV")
+st.write("Liq_div_max_supply = liquidity / max_supply")
+
+st.write("LTV_A =")
+st.code(" e^((30_day_price_volatiliy / Liq_div_max_supply) * -1)")
+st.write("LTV_B = ")
+st.code("  (Liq_div_max_supply)/(30_day_price_volatiliy)")
+st.write("LTV_A_ETH =")
+st.code(" e^((30_day_price_volatiliy_eth / Liq_div_max_supply) * -1)")
+
+
+st.write("This is the LTV_A ")
+st.plotly_chart(px.scatter(full_volume_df, x = 'blocknumber', y = [col for col in full_volume_df.columns if 'T_LTV_A_USD' in col], log_y=False), use_container_width=True)
+st.write("This is the LTV_B")
 st.plotly_chart(px.scatter(full_volume_df, x = 'blocknumber', y = [col for col in full_volume_df.columns if 'T_LTV_B' in col]), use_container_width=True)
 
-st.write("This is the LTV for the 30 day price volatility, using the log function, and multiplying by 10")
-st.plotly_chart(px.scatter(full_volume_df, x = 'blocknumber', y = [col for col in full_volume_df.columns if 'T_LTV_C' in col]), use_container_width=True)
-st.plotly_chart(px.scatter(full_volume_df, x = 'blocknumber', y = [col for col in full_volume_df.columns if '30_day_price_volatiliy_eth' in col]), use_container_width=True)
-
-
-
-
-st.write("This is the LTV for the 30 day price volatility, using the log function, and multiplying by, and using the ETH price volatility rather than being dolar based")
+st.write("This is the LTV_A_ETH")
 st.plotly_chart(px.scatter(full_volume_df, x = 'blocknumber', y = [col for col in full_volume_df.columns if 'T_LTV_A_ETH' in col]), use_container_width=True)
 
 
 
-
-st.write("full data set")
-st.write(full_volume_df)
-
+st.title("Copariing with Real LTV")
+with st.expander("See Data (liquidity and volatility)"):
+    st.write(full_volume_df)
 q_comp = '''
 with
   compound as (
@@ -216,7 +250,6 @@ SELECT
 *
 from
   compound'''
-
 df_comp = run_query_flipside(q_comp)
 df_comp['BLOCK_TIMESTAMP_'] = pd.to_datetime(df_comp['BLOCK_TIMESTAMP_'])
 df_comp = df_comp.sort_values(by = 'BLOCK_TIMESTAMP_')
@@ -224,7 +257,6 @@ ctoken_meta_q = '''select * from
 ethereum.compound.ez_asset_details'''
 df_ctoken_meta = run_query_flipside(ctoken_meta_q)
 df_ctoken_meta = df_ctoken_meta.drop(columns=['UNDERLYING_CONTRACT_METADATA','CTOKEN_METADATA'])
-
 merged = pd.merge(df_comp, df_ctoken_meta, left_on = 'token', right_on = 'CTOKEN_ADDRESS', how = 'left')
 merged['BLOCK_TIMESTAMP_'] = pd.to_datetime(merged['BLOCK_TIMESTAMP_'])
 only_max_df = pd.DataFrame()
@@ -233,17 +265,14 @@ for i in merged['token'].unique():
     df = df[df['BLOCK_TIMESTAMP_'] == df['BLOCK_TIMESTAMP_'].max()]
     only_max_df = pd.concat([only_max_df, df])
 only_max_df = only_max_df.reset_index()
-st.write(only_max_df)
+with st.expander("See Data (LTV Param Changes)"):
+    st.write(only_max_df)
 st.write("The following chart shows the current collateral factor for each cToken.")
 st.plotly_chart(px.bar(only_max_df, x = 'NEW_COLLATERAL', y = 'NEW_COLLATERAL', color = 'UNDERLYING_SYMBOL', barmode='group'), use_container_width=True)
 st.write("The following chart shows the change in collateral factor for each cToken over time.")
 st.plotly_chart(px.line(merged, x = 'BLOCK_TIMESTAMP_', y=['NEW_COLLATERAL'], color = 'UNDERLYING_SYMBOL'), use_container_width=True)
-
-
-
 fig = go.Figure()
 fig = subplots.make_subplots(specs=[[{"secondary_y": True}]])
-
 for symbol in ['COMP', 'AAVE', 'UNI', 'YFI', 'SUSHI', 'MKR', 'BAT', 'ZRX']:
     df_merged_single = merged[merged['UNDERLYING_SYMBOL'] == symbol]
     fig.add_trace(go.Scatter(x=df_merged_single['BLOCK_TIMESTAMP_'], y=merged['NEW_COLLATERAL'],
@@ -264,10 +293,6 @@ fig.update_layout(
         color="RebeccaPurple"
     )
 )
-
-
 st.plotly_chart(fig, use_container_width=True)
-
-
 st.write("Conclusion")
 st.write("I belive that using ETH in the volality function is the best fit for creating an LTV formula. However, given the lack of high enough LTV's for COMP, and some other assets, it could be assumed that some liquidity data is missing")
